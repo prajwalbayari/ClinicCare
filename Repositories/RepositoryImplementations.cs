@@ -10,9 +10,6 @@ using ClinicAppointmentManager.Exceptions;
 
 namespace ClinicAppointmentManager.Repositories
 {
-    /// <summary>
-    /// Repository implementation for Patient data access.
-    /// </summary>
     public class PatientRepository : IPatientRepository
     {
         private readonly IMongoCollection<Patient> _collection;
@@ -51,18 +48,6 @@ namespace ClinicAppointmentManager.Repositories
             catch (Exception ex)
             {
                 throw new DatabaseException($"Error retrieving patient: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<Patient> GetByEmailAsync(string email)
-        {
-            try
-            {
-                return await _collection.Find(p => p.Email == email).FirstOrDefaultAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new DatabaseException($"Error retrieving patient by email: {ex.Message}", ex);
             }
         }
 
@@ -111,24 +96,8 @@ namespace ClinicAppointmentManager.Repositories
                 throw new DatabaseException($"Error deleting patient: {ex.Message}", ex);
             }
         }
-
-        public async Task<List<Patient>> FindByFilterAsync(Func<Patient, bool> filter)
-        {
-            try
-            {
-                var allPatients = await GetAllAsync();
-                return allPatients.Where(filter).ToList();
-            }
-            catch (Exception ex)
-            {
-                throw new DatabaseException($"Error filtering patients: {ex.Message}", ex);
-            }
-        }
     }
 
-    /// <summary>
-    /// Repository implementation for Doctor data access.
-    /// </summary>
     public class DoctorRepository : IDoctorRepository
     {
         private readonly IMongoCollection<Doctor> _collection;
@@ -167,18 +136,6 @@ namespace ClinicAppointmentManager.Repositories
             catch (Exception ex)
             {
                 throw new DatabaseException($"Error retrieving doctor: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<Doctor> GetByLicenseNumberAsync(string licenseNumber)
-        {
-            try
-            {
-                return await _collection.Find(d => d.LicenseNumber == licenseNumber).FirstOrDefaultAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new DatabaseException($"Error retrieving doctor by license: {ex.Message}", ex);
             }
         }
 
@@ -227,36 +184,8 @@ namespace ClinicAppointmentManager.Repositories
                 throw new DatabaseException($"Error deleting doctor: {ex.Message}", ex);
             }
         }
-
-        public async Task<List<Doctor>> FindByFilterAsync(Func<Doctor, bool> filter)
-        {
-            try
-            {
-                var allDoctors = await GetAllAsync();
-                return allDoctors.Where(filter).ToList();
-            }
-            catch (Exception ex)
-            {
-                throw new DatabaseException($"Error filtering doctors: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<List<Doctor>> GetBySpecializationAsync(string specialization)
-        {
-            try
-            {
-                return await _collection.Find(d => d.Specialization == specialization).ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new DatabaseException($"Error retrieving doctors by specialization: {ex.Message}", ex);
-            }
-        }
     }
 
-    /// <summary>
-    /// Repository implementation for Appointment data access.
-    /// </summary>
     public class AppointmentRepository : IAppointmentRepository
     {
         private readonly IMongoCollection<Appointment> _collection;
@@ -392,8 +321,6 @@ namespace ClinicAppointmentManager.Repositories
                 return await _collection.Find(a =>
                     a.DoctorId == doctorId &&
                     a.Status != AppointmentStatus.Cancelled &&
-                    // Check for overlap: existing appointment starts before new appointment ends 
-                    // AND existing appointment ends after new appointment starts
                     a.StartTime < endTime &&
                     a.EndTime > startTime
                 ).ToListAsync();

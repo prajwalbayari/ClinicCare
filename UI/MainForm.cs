@@ -14,9 +14,6 @@ using ClinicAppointmentManager.Exceptions;
 
 namespace ClinicAppointmentManager.UI
 {
-    /// <summary>
-    /// Main application form with tabbed interface for managing patients, doctors, and appointments.
-    /// </summary>
     public partial class MainForm : Form
     {
         private MongoDbContext _dbContext;
@@ -28,7 +25,6 @@ namespace ClinicAppointmentManager.UI
         private SchedulerService _schedulerService;
         private NotificationService _notificationService;
         private ReportService _reportService;
-        private SampleDataSeeder _seeder;
 
         public MainForm()
         {
@@ -36,9 +32,6 @@ namespace ClinicAppointmentManager.UI
             InitializeServices();
         }
 
-        /// <summary>
-        /// Initializes all services and repositories.
-        /// </summary>
         private void InitializeServices()
         {
             try
@@ -53,7 +46,6 @@ namespace ClinicAppointmentManager.UI
                 _schedulerService = new SchedulerService(_appointmentRepository, _doctorRepository, _patientRepository);
                 _notificationService = new NotificationService();
                 _reportService = new ReportService(_appointmentRepository, _doctorRepository, _patientRepository);
-                _seeder = new SampleDataSeeder(_patientRepository, _doctorRepository, _appointmentRepository);
 
                 Text = "Clinic Appointment Manager";
                 this.Load += MainForm_Load;
@@ -73,16 +65,12 @@ namespace ClinicAppointmentManager.UI
             LoadAppointments();
         }
 
-        /// <summary>
-        /// Loads and displays all patients in a table format.
-        /// </summary>
         private async void LoadPatients()
         {
             try
             {
                 _patientsList = (await _patientRepository.GetAllAsync()).ToList();
                 
-                // Create DataTable for display
                 var dt = new DataTable();
                 dt.Columns.Add("Name", typeof(string));
                 dt.Columns.Add("Age", typeof(int));
@@ -97,7 +85,6 @@ namespace ClinicAppointmentManager.UI
 
                 PatientDataGridView.DataSource = dt;
 
-                // Update ComboBox for appointments
                 PatientComboBox.Items.Clear();
                 foreach (var patient in _patientsList)
                 {
@@ -112,16 +99,12 @@ namespace ClinicAppointmentManager.UI
             }
         }
 
-        /// <summary>
-        /// Loads and displays all doctors in a table format.
-        /// </summary>
         private async void LoadDoctors()
         {
             try
             {
                 _doctorsList = (await _doctorRepository.GetAllAsync()).ToList();
 
-                // Create DataTable for display
                 var dt = new DataTable();
                 dt.Columns.Add("Name", typeof(string));
                 dt.Columns.Add("Specialization", typeof(string));
@@ -137,7 +120,6 @@ namespace ClinicAppointmentManager.UI
 
                 DoctorDataGridView.DataSource = dt;
 
-                // Update ComboBox for appointments
                 DoctorComboBox.Items.Clear();
                 foreach (var doctor in _doctorsList)
                 {
@@ -152,16 +134,12 @@ namespace ClinicAppointmentManager.UI
             }
         }
 
-        /// <summary>
-        /// Loads and displays all appointments in a table format.
-        /// </summary>
         private async void LoadAppointments()
         {
             try
             {
                 var appointments = await _appointmentRepository.GetAllAsync();
 
-                // Create DataTable for display
                 var dt = new DataTable();
                 dt.Columns.Add("Date", typeof(string));
                 dt.Columns.Add("Time", typeof(string));
@@ -175,7 +153,6 @@ namespace ClinicAppointmentManager.UI
                     var patient = await _patientRepository.GetByIdAsync(appointment.PatientId);
                     var doctor = await _doctorRepository.GetByIdAsync(appointment.DoctorId);
                     
-                    // Convert UTC to local time for display
                     var startTimeLocal = appointment.StartTime.ToLocalTime();
                     var endTimeLocal = appointment.EndTime.ToLocalTime();
                     
@@ -199,9 +176,6 @@ namespace ClinicAppointmentManager.UI
             }
         }
 
-        /// <summary>
-        /// Handles booking a new appointment.
-        /// </summary>
         private async void BookButton_Click(object sender, EventArgs e)
         {
             try
@@ -227,13 +201,42 @@ namespace ClinicAppointmentManager.UI
                     return;
                 }
 
-                var appointment = await _schedulerService.BookAppointmentAsync(patient.Id, doctor.Id, startTime, endTime, reason);
+                bool isUpdateMode = BookButton.Tag != null && BookButton.Tag is ObjectId;
 
-                MessageBox.Show($"Appointment booked successfully!\nID: {appointment.Id}", "Success",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (isUpdateMode)
+                {
+                    var appointmentId = (ObjectId)BookButton.Tag;
+                    var existingAppointment = await _appointmentRepository.GetByIdAsync(appointmentId);
+                    
+                    if (existingAppointment != null)
+                    {
+                        existingAppointment.PatientId = patient.Id;
+                        existingAppointment.DoctorId = doctor.Id;
+                        existingAppointment.StartTime = startTime;
+                        existingAppointment.EndTime = endTime;
+                        existingAppointment.Reason = reason;
+                        existingAppointment.UpdatedAt = DateTime.UtcNow;
 
-                // Queue a notification
-                _notificationService.QueueReminder(appointment, patient, doctor);
+                        await _appointmentRepository.UpdateAsync(existingAppointment);
+
+                        MessageBox.Show("Appointment updated successfully!", "Success",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                        _notificationService.QueueReminder(existingAppointment, patient, doctor);
+                    }
+
+                    BookButton.Text = "✓ Book";
+                    BookButton.Tag = null;
+                }
+                else
+                {
+                    var appointment = await _schedulerService.BookAppointmentAsync(patient.Id, doctor.Id, startTime, endTime, reason);
+
+                    MessageBox.Show($"Appointment booked successfully!\nID: {appointment.Id}", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    _notificationService.QueueReminder(appointment, patient, doctor);
+                }
 
                 LoadAppointments();
                 ClearAppointmentFields();
@@ -252,15 +255,12 @@ namespace ClinicAppointmentManager.UI
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error booking appointment: {ex.Message}", "Error",
+                MessageBox.Show($"Error saving appointment: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LogException(ex);
             }
         }
 
-        /// <summary>
-        /// Handles cancelling an appointment.
-        /// </summary>
         private async void AppointmentCancelButton_Click(object sender, EventArgs e)
         {
             try
@@ -300,9 +300,6 @@ namespace ClinicAppointmentManager.UI
             }
         }
 
-        /// <summary>
-        /// Handles exporting appointments to CSV.
-        /// </summary>
         private async void ExportButton_Click(object sender, EventArgs e)
         {
             try
@@ -320,9 +317,6 @@ namespace ClinicAppointmentManager.UI
             }
         }
 
-        /// <summary>
-        /// Handles viewing doctor schedule.
-        /// </summary>
         private async void ViewScheduleButton_Click(object sender, EventArgs e)
         {
             try
@@ -349,9 +343,6 @@ namespace ClinicAppointmentManager.UI
             }
         }
 
-        /// <summary>
-        /// Handles sending queued notifications.
-        /// </summary>
         private void SendNotificationsButton_Click(object sender, EventArgs e)
         {
             try
@@ -375,16 +366,15 @@ namespace ClinicAppointmentManager.UI
             DoctorComboBox.SelectedIndex = -1;
             PatientComboBox.SelectedIndex = -1;
             StartTimePicker.Value = DateTime.Now;
+            
+            BookButton.Text = "✓ Book";
+            BookButton.Tag = null;
         }
 
-        /// <summary>
-        /// Handles adding a new patient to the database.
-        /// </summary>
         private async void AddPatientButton_Click(object sender, EventArgs e)
         {
             try
             {
-                // Validate required fields (Name, Age, Gender, Phone)
                 if (string.IsNullOrWhiteSpace(PatientNameTextBox.Text) ||
                     string.IsNullOrWhiteSpace(PatientPhoneTextBox.Text) ||
                     PatientGenderComboBox.SelectedIndex < 0)
@@ -401,7 +391,6 @@ namespace ClinicAppointmentManager.UI
                     return;
                 }
 
-                // Validate phone number (must be exactly 10 digits)
                 string phone = PatientPhoneTextBox.Text.Trim();
                 if (!IsValidPhoneNumber(phone))
                 {
@@ -410,7 +399,6 @@ namespace ClinicAppointmentManager.UI
                     return;
                 }
 
-                // Validate email format (required)
                 string email = PatientEmailTextBox.Text.Trim();
                 if (string.IsNullOrEmpty(email))
                 {
@@ -425,42 +413,67 @@ namespace ClinicAppointmentManager.UI
                     return;
                 }
 
-                var patient = new Patient
+                bool isUpdateMode = AddPatientButton.Tag != null && AddPatientButton.Tag is ObjectId;
+
+                if (isUpdateMode)
                 {
-                    Name = PatientNameTextBox.Text.Trim(),
-                    Age = (int)PatientAgeNumeric.Value,
-                    Gender = PatientGenderComboBox.SelectedItem.ToString(),
-                    Phone = phone,
-                    Email = email,  // Optional
-                    MedicalHistory = PatientHistoryTextBox.Text.Trim(),  // Optional
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
+                    var patientId = (ObjectId)AddPatientButton.Tag;
+                    var existingPatient = await _patientRepository.GetByIdAsync(patientId);
+                    
+                    if (existingPatient != null)
+                    {
+                        existingPatient.Name = PatientNameTextBox.Text.Trim();
+                        existingPatient.Age = (int)PatientAgeNumeric.Value;
+                        existingPatient.Gender = PatientGenderComboBox.SelectedItem.ToString();
+                        existingPatient.Phone = phone;
+                        existingPatient.Email = email;
+                        existingPatient.MedicalHistory = PatientHistoryTextBox.Text.Trim();
+                        existingPatient.UpdatedAt = DateTime.UtcNow;
 
-                await _patientRepository.AddAsync(patient);
+                        await _patientRepository.UpdateAsync(existingPatient);
 
-                MessageBox.Show($"Patient '{patient.Name}' registered successfully!", "Success",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show($"Patient '{existingPatient.Name}' updated successfully!", "Success",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+
+                    AddPatientButton.Text = "➕ Add Patient";
+                    AddPatientButton.Tag = null;
+                }
+                else
+                {
+                    var patient = new Patient
+                    {
+                        Name = PatientNameTextBox.Text.Trim(),
+                        Age = (int)PatientAgeNumeric.Value,
+                        Gender = PatientGenderComboBox.SelectedItem.ToString(),
+                        Phone = phone,
+                        Email = email,
+                        MedicalHistory = PatientHistoryTextBox.Text.Trim(),
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    await _patientRepository.AddAsync(patient);
+
+                    MessageBox.Show($"Patient '{patient.Name}' registered successfully!", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
 
                 ClearPatientForm();
                 LoadPatients();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error adding patient: {ex.Message}", "Error",
+                MessageBox.Show($"Error saving patient: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LogException(ex);
             }
         }
 
-        /// <summary>
-        /// Handles adding a new doctor to the database.
-        /// </summary>
         private async void AddDoctorButton_Click(object sender, EventArgs e)
         {
             try
             {
-                // Validate input
                 if (string.IsNullOrWhiteSpace(DoctorNameTextBox.Text) ||
                     DoctorSpecComboBox.SelectedIndex < 0 ||
                     string.IsNullOrWhiteSpace(DoctorLicenseTextBox.Text) ||
@@ -471,7 +484,6 @@ namespace ClinicAppointmentManager.UI
                     return;
                 }
 
-                // Validate email format
                 string email = DoctorEmailTextBox.Text.Trim();
                 if (!IsValidEmail(email))
                 {
@@ -480,7 +492,6 @@ namespace ClinicAppointmentManager.UI
                     return;
                 }
 
-                // Validate phone number if provided (must be exactly 10 digits)
                 string phone = DoctorPhoneTextBox.Text.Trim();
                 if (!string.IsNullOrEmpty(phone) && !IsValidPhoneNumber(phone))
                 {
@@ -489,7 +500,6 @@ namespace ClinicAppointmentManager.UI
                     return;
                 }
 
-                // Validate working hours format
                 if (!IsValidTimeFormat(DoctorStartHoursTextBox.Text) || !IsValidTimeFormat(DoctorEndHoursTextBox.Text))
                 {
                     MessageBox.Show("Working hours must be in HH:mm format (e.g., 09:00).", "Validation Error",
@@ -497,24 +507,55 @@ namespace ClinicAppointmentManager.UI
                     return;
                 }
 
-                var doctor = new Doctor
+                bool isUpdateMode = AddDoctorButton.Tag != null && AddDoctorButton.Tag is ObjectId;
+
+                if (isUpdateMode)
                 {
-                    Name = DoctorNameTextBox.Text.Trim(),
-                    Specialization = DoctorSpecComboBox.SelectedItem.ToString(),
-                    LicenseNumber = DoctorLicenseTextBox.Text.Trim(),
-                    Email = email,
-                    Phone = phone,
-                    WorkingHoursStart = DoctorStartHoursTextBox.Text.Trim(),
-                    WorkingHoursEnd = DoctorEndHoursTextBox.Text.Trim(),
-                    AppointmentDurationMinutes = (int)DoctorDurationNumeric.Value,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
+                    var doctorId = (ObjectId)AddDoctorButton.Tag;
+                    var existingDoctor = await _doctorRepository.GetByIdAsync(doctorId);
+                    
+                    if (existingDoctor != null)
+                    {
+                        existingDoctor.Name = DoctorNameTextBox.Text.Trim();
+                        existingDoctor.Specialization = DoctorSpecComboBox.SelectedItem.ToString();
+                        existingDoctor.LicenseNumber = DoctorLicenseTextBox.Text.Trim();
+                        existingDoctor.Email = email;
+                        existingDoctor.Phone = phone;
+                        existingDoctor.WorkingHoursStart = DoctorStartHoursTextBox.Text.Trim();
+                        existingDoctor.WorkingHoursEnd = DoctorEndHoursTextBox.Text.Trim();
+                        existingDoctor.AppointmentDurationMinutes = (int)DoctorDurationNumeric.Value;
+                        existingDoctor.UpdatedAt = DateTime.UtcNow;
 
-                await _doctorRepository.AddAsync(doctor);
+                        await _doctorRepository.UpdateAsync(existingDoctor);
 
-                MessageBox.Show($"Dr. {doctor.Name} ({doctor.Specialization}) registered successfully!", "Success",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show($"Dr. {existingDoctor.Name} updated successfully!", "Success",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+
+                    AddDoctorButton.Text = "➕ Add Doctor";
+                    AddDoctorButton.Tag = null;
+                }
+                else
+                {
+                    var doctor = new Doctor
+                    {
+                        Name = DoctorNameTextBox.Text.Trim(),
+                        Specialization = DoctorSpecComboBox.SelectedItem.ToString(),
+                        LicenseNumber = DoctorLicenseTextBox.Text.Trim(),
+                        Email = email,
+                        Phone = phone,
+                        WorkingHoursStart = DoctorStartHoursTextBox.Text.Trim(),
+                        WorkingHoursEnd = DoctorEndHoursTextBox.Text.Trim(),
+                        AppointmentDurationMinutes = (int)DoctorDurationNumeric.Value,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    await _doctorRepository.AddAsync(doctor);
+
+                    MessageBox.Show($"Dr. {doctor.Name} ({doctor.Specialization}) registered successfully!", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
 
                 ClearDoctorForm();
                 LoadDoctors();
@@ -527,34 +568,21 @@ namespace ClinicAppointmentManager.UI
             }
         }
 
-        /// <summary>
-        /// Validates phone number (must be exactly 10 digits).
-        /// </summary>
         private bool IsValidPhoneNumber(string phone)
         {
             return Regex.IsMatch(phone, @"^\d{10}$");
         }
 
-        /// <summary>
-        /// Validates email format (e.g., name@gmail.com, name@hotmail.com, etc.).
-        /// </summary>
         private bool IsValidEmail(string email)
         {
-            // Pattern matches: something@domain.extension
             return Regex.IsMatch(email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
         }
 
-        /// <summary>
-        /// Validates time format (HH:mm).
-        /// </summary>
         private bool IsValidTimeFormat(string time)
         {
             return TimeSpan.TryParse(time, out _);
         }
 
-        /// <summary>
-        /// Clears the patient registration form.
-        /// </summary>
         private void ClearPatientForm()
         {
             PatientNameTextBox.Clear();
@@ -563,11 +591,11 @@ namespace ClinicAppointmentManager.UI
             PatientPhoneTextBox.Clear();
             PatientEmailTextBox.Clear();
             PatientHistoryTextBox.Clear();
+            
+            AddPatientButton.Text = "➕ Add Patient";
+            AddPatientButton.Tag = null;
         }
 
-        /// <summary>
-        /// Clears the doctor registration form.
-        /// </summary>
         private void ClearDoctorForm()
         {
             DoctorNameTextBox.Clear();
@@ -578,11 +606,11 @@ namespace ClinicAppointmentManager.UI
             DoctorStartHoursTextBox.Text = "09:00";
             DoctorEndHoursTextBox.Text = "17:00";
             DoctorDurationNumeric.Value = 30;
+            
+            AddDoctorButton.Text = "➕ Add Doctor";
+            AddDoctorButton.Tag = null;
         }
 
-        /// <summary>
-        /// Logs exceptions to a file for debugging.
-        /// </summary>
         private void LogException(Exception ex)
         {
             try
@@ -593,9 +621,6 @@ namespace ClinicAppointmentManager.UI
             catch { }
         }
 
-        /// <summary>
-        /// Handles deleting the selected patient.
-        /// </summary>
         private async void DeletePatientButton_Click(object sender, EventArgs e)
         {
             try
@@ -616,7 +641,6 @@ namespace ClinicAppointmentManager.UI
 
                 var patient = _patientsList[selectedIndex];
 
-                // Check for related appointments
                 var patientAppointments = await _appointmentRepository.GetAppointmentsForPatientAsync(patient.Id);
                 var appointmentCount = patientAppointments.Count;
 
@@ -635,7 +659,6 @@ namespace ClinicAppointmentManager.UI
 
                 if (result == DialogResult.Yes)
                 {
-                    // Delete all related appointments first
                     foreach (var appointment in patientAppointments)
                     {
                         await _appointmentRepository.DeleteAsync(appointment.Id);
@@ -662,9 +685,6 @@ namespace ClinicAppointmentManager.UI
             }
         }
 
-        /// <summary>
-        /// Handles deleting the selected doctor.
-        /// </summary>
         private async void DeleteDoctorButton_Click(object sender, EventArgs e)
         {
             try
@@ -685,7 +705,6 @@ namespace ClinicAppointmentManager.UI
 
                 var doctor = _doctorsList[selectedIndex];
 
-                // Check for related appointments
                 var doctorAppointments = await _appointmentRepository.GetAppointmentsForDoctorAsync(doctor.Id, DateTime.MinValue, DateTime.MaxValue);
                 var appointmentCount = doctorAppointments.Count;
 
@@ -704,7 +723,6 @@ namespace ClinicAppointmentManager.UI
 
                 if (result == DialogResult.Yes)
                 {
-                    // Delete all related appointments first
                     foreach (var appointment in doctorAppointments)
                     {
                         await _appointmentRepository.DeleteAsync(appointment.Id);
@@ -731,9 +749,6 @@ namespace ClinicAppointmentManager.UI
             }
         }
 
-        /// <summary>
-        /// Handles deleting the selected appointment.
-        /// </summary>
         private async void DeleteAppointmentButton_Click(object sender, EventArgs e)
         {
             try
@@ -779,6 +794,134 @@ namespace ClinicAppointmentManager.UI
             catch (Exception ex)
             {
                 MessageBox.Show($"Error deleting appointment: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LogException(ex);
+            }
+        }
+
+        private void EditPatientButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (PatientDataGridView.SelectedRows.Count == 0)
+                {
+                    MessageBox.Show("Please select a patient to edit.", "Selection Required",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var selectedIndex = PatientDataGridView.SelectedRows[0].Index;
+                if (selectedIndex >= _patientsList.Count)
+                {
+                    MessageBox.Show("Invalid selection.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                var patient = _patientsList[selectedIndex];
+
+                PatientNameTextBox.Text = patient.Name;
+                PatientAgeNumeric.Value = patient.Age > 0 ? patient.Age : 1;
+                PatientGenderComboBox.Text = patient.Gender;
+                PatientPhoneTextBox.Text = patient.Phone;
+                PatientEmailTextBox.Text = patient.Email;
+                PatientHistoryTextBox.Text = patient.MedicalHistory;
+
+                AddPatientButton.Text = "💾 Update Patient";
+                AddPatientButton.Tag = patient.Id;
+
+                MessageBox.Show("Patient details loaded into the form. Make changes and click 'Update Patient' to save.", 
+                    "Edit Mode", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading patient for edit: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LogException(ex);
+            }
+        }
+
+        private void EditDoctorButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (DoctorDataGridView.SelectedRows.Count == 0)
+                {
+                    MessageBox.Show("Please select a doctor to edit.", "Selection Required",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var selectedIndex = DoctorDataGridView.SelectedRows[0].Index;
+                if (selectedIndex >= _doctorsList.Count)
+                {
+                    MessageBox.Show("Invalid selection.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                var doctor = _doctorsList[selectedIndex];
+
+                DoctorNameTextBox.Text = doctor.Name;
+                DoctorSpecComboBox.Text = doctor.Specialization;
+                DoctorLicenseTextBox.Text = doctor.LicenseNumber;
+                DoctorEmailTextBox.Text = doctor.Email;
+                DoctorPhoneTextBox.Text = doctor.Phone;
+                DoctorStartHoursTextBox.Text = doctor.WorkingHoursStart;
+                DoctorEndHoursTextBox.Text = doctor.WorkingHoursEnd;
+                DoctorDurationNumeric.Value = doctor.AppointmentDurationMinutes;
+
+                AddDoctorButton.Text = "💾 Update Doctor";
+                AddDoctorButton.Tag = doctor.Id;
+
+                MessageBox.Show("Doctor details loaded into the form. Make changes and click 'Update Doctor' to save.", 
+                    "Edit Mode", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading doctor for edit: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LogException(ex);
+            }
+        }
+
+        private async void EditAppointmentButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (AppointmentDataGridView.SelectedRows.Count == 0)
+                {
+                    MessageBox.Show("Please select an appointment to edit.", "Selection Required",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var selectedIndex = AppointmentDataGridView.SelectedRows[0].Index;
+                var appointments = (await _appointmentRepository.GetAllAsync()).ToList();
+
+                if (selectedIndex >= appointments.Count)
+                {
+                    MessageBox.Show("Invalid selection.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                var appointment = appointments[selectedIndex];
+                var patient = await _patientRepository.GetByIdAsync(appointment.PatientId);
+                var doctor = await _doctorRepository.GetByIdAsync(appointment.DoctorId);
+
+                DoctorComboBox.SelectedItem = _doctorsList.FirstOrDefault(d => d.Id == appointment.DoctorId);
+                PatientComboBox.SelectedItem = _patientsList.FirstOrDefault(p => p.Id == appointment.PatientId);
+                AppointmentDatePicker.Value = appointment.StartTime.ToLocalTime().Date;
+                StartTimePicker.Value = appointment.StartTime.ToLocalTime();
+                ReasonTextBox.Text = appointment.Reason;
+
+                BookButton.Text = "💾 Update";
+                BookButton.Tag = appointment.Id;
+
+                MessageBox.Show("Appointment details loaded into the form. Make changes and click 'Update' to save.", 
+                    "Edit Mode", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading appointment for edit: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LogException(ex);
             }

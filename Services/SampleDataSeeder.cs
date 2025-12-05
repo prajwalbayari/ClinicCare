@@ -1,20 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using ClinicAppointmentManager.Data;
 using ClinicAppointmentManager.Models;
 using ClinicAppointmentManager.Repositories;
 using ClinicAppointmentManager.Exceptions;
-using MongoDB.Bson;
 
 namespace ClinicAppointmentManager.Services
 {
-    /// <summary>
-    /// Service for seeding sample data into the database.
-    /// </summary>
     public class SampleDataSeeder
     {
         private readonly IPatientRepository _patientRepository;
@@ -33,24 +26,18 @@ namespace ClinicAppointmentManager.Services
             _logFilePath = logFilePath;
         }
 
-        /// <summary>
-        /// Seeds the database with sample data.
-        /// </summary>
         public async Task SeedSampleDataAsync()
         {
             try
             {
                 LogMessage("Starting data seeding...");
 
-                // Seed patients
                 var patients = await SeedPatientsAsync();
                 LogMessage($"✓ Seeded {patients.Count} patients");
 
-                // Seed doctors
                 var doctors = await SeedDoctorsAsync();
                 LogMessage($"✓ Seeded {doctors.Count} doctors");
 
-                // Seed appointments
                 var appointments = await SeedAppointmentsAsync(patients, doctors);
                 LogMessage($"✓ Seeded {appointments.Count} appointments");
 
@@ -63,9 +50,6 @@ namespace ClinicAppointmentManager.Services
             }
         }
 
-        /// <summary>
-        /// Seeds sample patients.
-        /// </summary>
         private async Task<List<Patient>> SeedPatientsAsync()
         {
             var patients = new List<Patient>
@@ -125,9 +109,6 @@ namespace ClinicAppointmentManager.Services
             return seededPatients;
         }
 
-        /// <summary>
-        /// Seeds sample doctors.
-        /// </summary>
         private async Task<List<Doctor>> SeedDoctorsAsync()
         {
             var doctors = new List<Doctor>
@@ -184,16 +165,12 @@ namespace ClinicAppointmentManager.Services
             return seededDoctors;
         }
 
-        /// <summary>
-        /// Seeds sample appointments.
-        /// </summary>
         private async Task<List<Appointment>> SeedAppointmentsAsync(List<Patient> patients, List<Doctor> doctors)
         {
             var seededAppointments = new List<Appointment>();
             if (patients.Count == 0 || doctors.Count == 0)
                 return seededAppointments;
 
-            // Schedule appointments for today and tomorrow
             var today = DateTime.Now.Date;
             var appointments = new List<Appointment>
             {
@@ -255,9 +232,6 @@ namespace ClinicAppointmentManager.Services
             return seededAppointments;
         }
 
-        /// <summary>
-        /// Logs messages to console and file.
-        /// </summary>
         private void LogMessage(string message)
         {
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");

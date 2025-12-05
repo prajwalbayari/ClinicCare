@@ -52,8 +52,12 @@ namespace ClinicAppointmentManager.UI
             this.ViewScheduleButton = new System.Windows.Forms.Button();
             this.SendNotificationsButton = new System.Windows.Forms.Button();
             this.DeletePatientButton = new System.Windows.Forms.Button();
+            this.EditPatientButton = new System.Windows.Forms.Button();
             this.DeleteDoctorButton = new System.Windows.Forms.Button();
+            this.EditDoctorButton = new System.Windows.Forms.Button();
             this.DeleteAppointmentButton = new System.Windows.Forms.Button();
+            this.EditAppointmentButton = new System.Windows.Forms.Button();
+            this.AppointmentActionsGroupBox = new System.Windows.Forms.GroupBox();
 
             this.MainTabControl.SuspendLayout();
             this.PatientsTab.SuspendLayout();
@@ -121,6 +125,7 @@ namespace ClinicAppointmentManager.UI
             this.MainTabControl.Padding = new System.Drawing.Point(20, 5);
 
             // PatientsTab
+            this.PatientsTab.Controls.Add(this.EditPatientButton);
             this.PatientsTab.Controls.Add(this.DeletePatientButton);
             this.PatientsTab.Controls.Add(this.PatientFormGroupBox);
             this.PatientsTab.Controls.Add(this.PatientsLabel);
@@ -283,8 +288,22 @@ namespace ClinicAppointmentManager.UI
             this.AddPatientButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.AddPatientButton.Click += new System.EventHandler(this.AddPatientButton_Click);
 
+            // EditPatientButton
+            this.EditPatientButton.Location = new System.Drawing.Point(15, 535);
+            this.EditPatientButton.Name = "EditPatientButton";
+            this.EditPatientButton.Size = new System.Drawing.Size(130, 35);
+            this.EditPatientButton.Text = "✏️ Edit";
+            this.EditPatientButton.UseVisualStyleBackColor = false;
+            this.EditPatientButton.BackColor = System.Drawing.Color.FromArgb(33, 150, 243);
+            this.EditPatientButton.ForeColor = System.Drawing.Color.White;
+            this.EditPatientButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.EditPatientButton.FlatAppearance.BorderSize = 0;
+            this.EditPatientButton.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+            this.EditPatientButton.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.EditPatientButton.Click += new System.EventHandler(this.EditPatientButton_Click);
+
             // DeletePatientButton
-            this.DeletePatientButton.Location = new System.Drawing.Point(15, 535);
+            this.DeletePatientButton.Location = new System.Drawing.Point(155, 535);
             this.DeletePatientButton.Name = "DeletePatientButton";
             this.DeletePatientButton.Size = new System.Drawing.Size(130, 35);
             this.DeletePatientButton.Text = "🗑️ Delete";
@@ -298,6 +317,7 @@ namespace ClinicAppointmentManager.UI
             this.DeletePatientButton.Click += new System.EventHandler(this.DeletePatientButton_Click);
 
             // DoctorsTab
+            this.DoctorsTab.Controls.Add(this.EditDoctorButton);
             this.DoctorsTab.Controls.Add(this.DeleteDoctorButton);
             this.DoctorsTab.Controls.Add(this.DoctorFormGroupBox);
             this.DoctorsTab.Controls.Add(this.DoctorsLabel);
@@ -510,8 +530,22 @@ namespace ClinicAppointmentManager.UI
             this.AddDoctorButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.AddDoctorButton.Click += new System.EventHandler(this.AddDoctorButton_Click);
 
+            // EditDoctorButton
+            this.EditDoctorButton.Location = new System.Drawing.Point(15, 535);
+            this.EditDoctorButton.Name = "EditDoctorButton";
+            this.EditDoctorButton.Size = new System.Drawing.Size(130, 35);
+            this.EditDoctorButton.Text = "✏️ Edit";
+            this.EditDoctorButton.UseVisualStyleBackColor = false;
+            this.EditDoctorButton.BackColor = System.Drawing.Color.FromArgb(33, 150, 243);
+            this.EditDoctorButton.ForeColor = System.Drawing.Color.White;
+            this.EditDoctorButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.EditDoctorButton.FlatAppearance.BorderSize = 0;
+            this.EditDoctorButton.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+            this.EditDoctorButton.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.EditDoctorButton.Click += new System.EventHandler(this.EditDoctorButton_Click);
+
             // DeleteDoctorButton
-            this.DeleteDoctorButton.Location = new System.Drawing.Point(15, 535);
+            this.DeleteDoctorButton.Location = new System.Drawing.Point(155, 535);
             this.DeleteDoctorButton.Name = "DeleteDoctorButton";
             this.DeleteDoctorButton.Size = new System.Drawing.Size(130, 35);
             this.DeleteDoctorButton.Text = "🗑️ Delete";
@@ -526,6 +560,7 @@ namespace ClinicAppointmentManager.UI
 
             // AppointmentsTab
             this.AppointmentsTab.Controls.Add(this.ToolsGroupBox);
+            this.AppointmentsTab.Controls.Add(this.AppointmentActionsGroupBox);
             this.AppointmentsTab.Controls.Add(this.BookingGroupBox);
             this.AppointmentsTab.Controls.Add(this.AppointmentLabel);
             this.AppointmentsTab.Controls.Add(this.AppointmentDataGridView);
@@ -706,14 +741,55 @@ namespace ClinicAppointmentManager.UI
             this.AppointmentCancelButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.AppointmentCancelButton.Click += new System.EventHandler(this.AppointmentCancelButton_Click);
 
+            // AppointmentActionsGroupBox
+            this.AppointmentActionsGroupBox.Controls.Add(this.EditAppointmentButton);
+            this.AppointmentActionsGroupBox.Controls.Add(this.DeleteAppointmentButton);
+            this.AppointmentActionsGroupBox.Location = new System.Drawing.Point(15, 520);
+            this.AppointmentActionsGroupBox.Name = "AppointmentActionsGroupBox";
+            this.AppointmentActionsGroupBox.Size = new System.Drawing.Size(300, 55);
+            this.AppointmentActionsGroupBox.TabIndex = 4;
+            this.AppointmentActionsGroupBox.TabStop = false;
+            this.AppointmentActionsGroupBox.Text = "📝 Appointment Actions";
+            this.AppointmentActionsGroupBox.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.AppointmentActionsGroupBox.BackColor = System.Drawing.Color.FromArgb(250, 250, 250);
+            this.AppointmentActionsGroupBox.ForeColor = System.Drawing.Color.FromArgb(45, 125, 154);
+            this.AppointmentActionsGroupBox.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+
+            // EditAppointmentButton
+            this.EditAppointmentButton.Location = new System.Drawing.Point(15, 18);
+            this.EditAppointmentButton.Name = "EditAppointmentButton";
+            this.EditAppointmentButton.Size = new System.Drawing.Size(120, 30);
+            this.EditAppointmentButton.TabIndex = 0;
+            this.EditAppointmentButton.Text = "✏️ Edit";
+            this.EditAppointmentButton.UseVisualStyleBackColor = false;
+            this.EditAppointmentButton.BackColor = System.Drawing.Color.FromArgb(33, 150, 243);
+            this.EditAppointmentButton.ForeColor = System.Drawing.Color.White;
+            this.EditAppointmentButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.EditAppointmentButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.EditAppointmentButton.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.EditAppointmentButton.Click += new System.EventHandler(this.EditAppointmentButton_Click);
+
+            // DeleteAppointmentButton
+            this.DeleteAppointmentButton.Location = new System.Drawing.Point(150, 18);
+            this.DeleteAppointmentButton.Name = "DeleteAppointmentButton";
+            this.DeleteAppointmentButton.Size = new System.Drawing.Size(120, 30);
+            this.DeleteAppointmentButton.TabIndex = 1;
+            this.DeleteAppointmentButton.Text = "🗑️ Delete";
+            this.DeleteAppointmentButton.UseVisualStyleBackColor = false;
+            this.DeleteAppointmentButton.BackColor = System.Drawing.Color.FromArgb(244, 67, 54);
+            this.DeleteAppointmentButton.ForeColor = System.Drawing.Color.White;
+            this.DeleteAppointmentButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.DeleteAppointmentButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.DeleteAppointmentButton.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.DeleteAppointmentButton.Click += new System.EventHandler(this.DeleteAppointmentButton_Click);
+
             // ToolsGroupBox
-            this.ToolsGroupBox.Controls.Add(this.DeleteAppointmentButton);
             this.ToolsGroupBox.Controls.Add(this.ExportButton);
             this.ToolsGroupBox.Controls.Add(this.ViewScheduleButton);
             this.ToolsGroupBox.Controls.Add(this.SendNotificationsButton);
-            this.ToolsGroupBox.Location = new System.Drawing.Point(15, 520);
+            this.ToolsGroupBox.Location = new System.Drawing.Point(330, 520);
             this.ToolsGroupBox.Name = "ToolsGroupBox";
-            this.ToolsGroupBox.Size = new System.Drawing.Size(1046, 55);
+            this.ToolsGroupBox.Size = new System.Drawing.Size(731, 55);
             this.ToolsGroupBox.TabIndex = 3;
             this.ToolsGroupBox.TabStop = false;
             this.ToolsGroupBox.Text = "⚡ Quick Actions";
@@ -761,20 +837,6 @@ namespace ClinicAppointmentManager.UI
             this.SendNotificationsButton.Cursor = System.Windows.Forms.Cursors.Hand;
             this.SendNotificationsButton.Click += new System.EventHandler(this.SendNotificationsButton_Click);
 
-            // DeleteAppointmentButton
-            this.DeleteAppointmentButton.Location = new System.Drawing.Point(500, 18);
-            this.DeleteAppointmentButton.Name = "DeleteAppointmentButton";
-            this.DeleteAppointmentButton.Size = new System.Drawing.Size(120, 30);
-            this.DeleteAppointmentButton.TabIndex = 6;
-            this.DeleteAppointmentButton.Text = "🗑️ Delete";
-            this.DeleteAppointmentButton.UseVisualStyleBackColor = false;
-            this.DeleteAppointmentButton.BackColor = System.Drawing.Color.FromArgb(244, 67, 54);
-            this.DeleteAppointmentButton.ForeColor = System.Drawing.Color.White;
-            this.DeleteAppointmentButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.DeleteAppointmentButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.DeleteAppointmentButton.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.DeleteAppointmentButton.Click += new System.EventHandler(this.DeleteAppointmentButton_Click);
-
             // MainForm
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -796,6 +858,7 @@ namespace ClinicAppointmentManager.UI
             this.AppointmentsTab.PerformLayout();
             this.BookingGroupBox.ResumeLayout(false);
             this.BookingGroupBox.PerformLayout();
+            this.AppointmentActionsGroupBox.ResumeLayout(false);
             this.ToolsGroupBox.ResumeLayout(false);
             this.PatientFormGroupBox.ResumeLayout(false);
             this.PatientFormGroupBox.PerformLayout();
@@ -873,7 +936,11 @@ namespace ClinicAppointmentManager.UI
         private System.Windows.Forms.NumericUpDown DoctorDurationNumeric;
         private System.Windows.Forms.Button AddDoctorButton;
         private System.Windows.Forms.Button DeletePatientButton;
+        private System.Windows.Forms.Button EditPatientButton;
         private System.Windows.Forms.Button DeleteDoctorButton;
+        private System.Windows.Forms.Button EditDoctorButton;
         private System.Windows.Forms.Button DeleteAppointmentButton;
+        private System.Windows.Forms.Button EditAppointmentButton;
+        private System.Windows.Forms.GroupBox AppointmentActionsGroupBox;
     }
 }

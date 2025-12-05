@@ -11,9 +11,6 @@ using ClinicAppointmentManager.Exceptions;
 
 namespace ClinicAppointmentManager.Services
 {
-    /// <summary>
-    /// Service for scheduling appointments with conflict detection.
-    /// </summary>
     public class SchedulerService
     {
         private readonly IAppointmentRepository _appointmentRepository;
@@ -29,36 +26,21 @@ namespace ClinicAppointmentManager.Services
             _patientRepository = patientRepository;
         }
 
-        /// <summary>
-        /// Books an appointment after validating time slots and checking for conflicts.
-        /// Double-booking prevention algorithm:
-        /// 1. Validates that the appointment time is within doctor's working hours
-        /// 2. Validates that start time is before end time and end time is in the future
-        /// 3. Queries all non-cancelled appointments for the doctor
-        /// 4. Checks if the new appointment's time range overlaps with any existing appointment
-        /// 5. An overlap occurs when: existing.StartTime < new.EndTime AND existing.EndTime > new.StartTime
-        /// 6. If any overlap is found, throws DoubleBookingException
-        /// 7. Only after all validations pass is the appointment inserted into the database
-        /// </summary>
         public async Task<Appointment> BookAppointmentAsync(ObjectId patientId, ObjectId doctorId,
                                                             DateTime startTime, DateTime endTime, string reason)
         {
             try
             {
-                // Validate patient exists
                 var patient = await _patientRepository.GetByIdAsync(patientId);
                 if (patient == null)
                     throw new ResourceNotFoundException($"Patient with ID {patientId} not found.");
 
-                // Validate doctor exists
                 var doctor = await _doctorRepository.GetByIdAsync(doctorId);
                 if (doctor == null)
                     throw new ResourceNotFoundException($"Doctor with ID {doctorId} not found.");
 
-                // Validate time slot
                 ValidateTimeSlot(startTime, endTime, doctor);
 
-                // Check for conflicts (double-booking)
                 var conflicts = await _appointmentRepository.GetConflictingAppointmentsAsync(doctorId, startTime, endTime);
                 if (conflicts.Count > 0)
                 {
@@ -67,7 +49,6 @@ namespace ClinicAppointmentManager.Services
                         $"Doctor has conflicting appointments during this time slot: {conflictInfo}");
                 }
 
-                // Create and add appointment
                 var appointment = new Appointment
                 {
                     PatientId = patientId,
@@ -96,9 +77,6 @@ namespace ClinicAppointmentManager.Services
             }
         }
 
-        /// <summary>
-        /// Validates that the appointment time is within doctor's working hours.
-        /// </summary>
         private void ValidateTimeSlot(DateTime startTime, DateTime endTime, Doctor doctor)
         {
             if (startTime >= endTime)
@@ -124,9 +102,6 @@ namespace ClinicAppointmentManager.Services
                     $"Appointment duration must be {doctor.AppointmentDurationMinutes} minutes.");
         }
 
-        /// <summary>
-        /// Cancels an existing appointment.
-        /// </summary>
         public async Task<Appointment> CancelAppointmentAsync(ObjectId appointmentId)
         {
             try
@@ -145,62 +120,8 @@ namespace ClinicAppointmentManager.Services
                 throw new DatabaseException($"Error cancelling appointment: {ex.Message}", ex);
             }
         }
-
-        /// <summary>
-        /// Gets available time slots for a doctor on a specific date.
-        /// </summary>
-        public async Task<List<(DateTime, DateTime)>> GetAvailableTimeSlotsAsync(ObjectId doctorId, DateTime date)
-        {
-            try
-            {
-                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
-                if (doctor == null)
-                    throw new ResourceNotFoundException($"Doctor with ID {doctorId} not found.");
-
-                var appointments = await _appointmentRepository.GetAppointmentsForDoctorAsync(
-                    doctorId,
-                    date.Date,
-                    date.Date.AddDays(1).AddSeconds(-1)
-                );
-
-                var availableSlots = new List<(DateTime, DateTime)>();
-
-                if (!TimeSpan.TryParse(doctor.WorkingHoursStart, out var workStart) ||
-                    !TimeSpan.TryParse(doctor.WorkingHoursEnd, out var workEnd))
-                    return availableSlots;
-
-                var currentTime = date.Date.Add(workStart);
-                var endTime = date.Date.Add(workEnd);
-
-                while (currentTime < endTime)
-                {
-                    var slotEnd = currentTime.AddMinutes(doctor.AppointmentDurationMinutes);
-                    if (slotEnd > endTime) break;
-
-                    var isConflict = appointments.Any(a =>
-                        a.StartTime < slotEnd && a.EndTime > currentTime
-                    );
-
-                    if (!isConflict)
-                    {
-                        availableSlots.Add((currentTime, slotEnd));
-                    }
-
-                    currentTime = slotEnd;
-                }
-
-                return availableSlots;
-            }
-            catch (Exception ex)
-            {
-                throw new DatabaseException($"Error getting available slots: {ex.Message}", ex);
-            }
-        }
     }
 
-    /// <summary>
-    /// Service for sending appointment notifications and reminders.
-    /// </summary>
     public class NotificationService
     {
         private readonly List<string> _notificationQueue;
@@ -212,9 +133,6 @@ namespace ClinicAppointmentManager.Services
             _logFilePath = logFilePath;
         }
 
-        /// <summary>
-        /// Queues a reminder notification.
-        /// </summary>
         public void QueueReminder(Appointment appointment, Patient patient, Doctor doctor)
         {
             try
@@ -229,9 +147,6 @@ namespace ClinicAppointmentManager.Services
             }
         }
 
-        /// <summary>
-        /// Sends all queued notifications (in demo mode, shows message boxes).
-        /// </summary>
         public void SendAllNotifications()
         {
             foreach (var notification in _notificationQueue)
@@ -241,9 +156,6 @@ namespace ClinicAppointmentManager.Services
             _notificationQueue.Clear();
         }
 
-        /// <summary>
-        /// Sends a single notification.
-        /// </summary>
         public void SendNotification(string message)
         {
             try
@@ -259,9 +171,6 @@ namespace ClinicAppointmentManager.Services
             }
         }
 
-        /// <summary>
-        /// Logs notifications to a file.
-        /// </summary>
         private void LogNotification(string message)
         {
             try
@@ -273,19 +182,8 @@ namespace ClinicAppointmentManager.Services
                 Console.WriteLine($"Error logging notification: {ex.Message}");
             }
         }
-
-        /// <summary>
-        /// Gets all queued notifications.
-        /// </summary>
-        public List<string> GetQueuedNotifications()
-        {
-            return new List<string>(_notificationQueue);
-        }
     }
 
-    /// <summary>
-    /// Service for generating appointment reports and exports.
-    /// </summary>
     public class ReportService
     {
         private readonly IAppointmentRepository _appointmentRepository;
@@ -301,9 +199,6 @@ namespace ClinicAppointmentManager.Services
             _patientRepository = patientRepository;
         }
 
-        /// <summary>
-        /// Exports appointments to a CSV file.
-        /// </summary>
         public async Task<string> ExportAppointmentsToCSVAsync(DateTime date, string filePath = null)
         {
             try
@@ -342,9 +237,6 @@ namespace ClinicAppointmentManager.Services
             }
         }
 
-        /// <summary>
-        /// Gets a summary report of appointments for a doctor on a given date.
-        /// </summary>
         public async Task<string> GenerateDoctorDaySummaryAsync(ObjectId doctorId, DateTime date)
         {
             try
